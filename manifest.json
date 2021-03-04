@@ -1,0 +1,10 @@
+{
+    "name": "Stage Remover",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/thunderstore-io",
+    "description": "A mod that removes certain stages from the destination pool in RoR2. Currently only works for Sundered Grove.",
+    "dependencies": [
+        "tristanmcpherson-R2API-2.5.14",
+		"bbepis-BepInExPack-5.3.1"
+    ]
+}
