@@ -58,6 +58,8 @@ namespace StageRemover
 
         public List<SceneDef> StagesToRemove = new List<SceneDef>();
 
+        public HashSet<SceneDef> destinationChecks = new HashSet<SceneDef>();
+
         public void RunConfig() {
 
             EnableRoost = Config.Bind<bool>("Vanilla Maps", "enableRoost", true, "Enable Distant Roost in Stage Destinations? Default: true").Value;
@@ -157,105 +159,61 @@ namespace StageRemover
 
         }
 
-        public void GenerateStageLists() {
+        public HashSet<SceneDef> MakeSet(HashSet<SceneDef> sceneSet, List<SceneDef> inputList) {
 
-            var startingStages = Run.instance.startingScenes;
-
-            foreach (SceneDef scene in startingStages) {
+            foreach (SceneDef scene in inputList) {
 
                 for (int i = 0; i < scene.destinations.Length; i++) {
 
-                    Stage1Set.Add(scene.destinations[i]);
+                    sceneSet.Add(inputList[i]);
                 
                 }
             
             }
 
-            foreach (SceneDef scene in Stage1Set)
-            {
+            return sceneSet;
+        
+        }
 
-                for (int i = 0; i < scene.destinations.Length; i++)
-                {
+        public HashSet<SceneDef> RemoveScenes(HashSet<SceneDef> sceneSet, List<SceneDef> inputList) {
 
-                    Stage2Set.Add(scene.destinations[i]);
+            for (int i = 0; i < inputList.Count; i++) {
+
+                if (sceneSet.Contains(inputList[i])) {
+
+                    sceneSet.Remove(inputList[i]);
 
                 }
-
+            
             }
 
-            foreach (SceneDef scene in Stage2Set)
-            {
+            return sceneSet;
+        
+        }
 
-                for (int i = 0; i < scene.destinations.Length; i++)
-                {
+        public void GenerateStageLists() {
 
-                    Stage3Set.Add(scene.destinations[i]);
+            var startingStages = Run.instance.startingScenes;
 
-                }
+            Stage1Set = MakeSet(Stage1Set, startingStages.ToList());
 
-            }
+            Stage2Set = MakeSet(Stage2Set, Stage1Set.ToList());
 
-            foreach (SceneDef scene in Stage3Set)
-            {
+            Stage3Set = MakeSet(Stage3Set, Stage2Set.ToList());
 
-                for (int i = 0; i < scene.destinations.Length; i++)
-                {
+            Stage4Set = MakeSet(Stage4Set, Stage3Set.ToList());
 
-                    Stage4Set.Add(scene.destinations[i]);
+            Stage5Set = MakeSet(Stage5Set, Stage4Set.ToList());
 
-                }
+            Stage1Set = RemoveScenes(Stage1Set, StagesToRemove);
 
-            }
+            Stage2Set = RemoveScenes(Stage2Set, StagesToRemove);
 
-            foreach (SceneDef scene in Stage4Set)
-            {
+            Stage3Set = RemoveScenes(Stage3Set, StagesToRemove);
 
-                for (int i = 0; i < scene.destinations.Length; i++)
-                {
+            Stage4Set = RemoveScenes(Stage4Set, StagesToRemove);
 
-                    Stage5Set.Add(scene.destinations[i]);
-
-                }
-
-            }
-
-            for (int i = 0; i < StagesToRemove.Count; i++) {
-
-                if (Stage1Set.Contains(StagesToRemove[i])) {
-
-                    Stage1Set.Remove(StagesToRemove[i]);
-                
-                }
-
-                if (Stage2Set.Contains(StagesToRemove[i]))
-                {
-
-                    Stage2Set.Remove(StagesToRemove[i]);
-
-                }
-
-                if (Stage3Set.Contains(StagesToRemove[i]))
-                {
-
-                    Stage3Set.Remove(StagesToRemove[i]);
-
-                }
-
-                if (Stage4Set.Contains(StagesToRemove[i]))
-                {
-
-                    Stage4Set.Remove(StagesToRemove[i]);
-
-                }
-
-                if (Stage5Set.Contains(StagesToRemove[i]))
-                {
-
-                    Stage5Set.Remove(StagesToRemove[i]);
-
-                }
-
-            }
+            Stage5Set = RemoveScenes(Stage5Set, StagesToRemove);
 
         }
 
@@ -278,8 +236,42 @@ namespace StageRemover
 
         }
 
+        private bool Check(HashSet<SceneDef> setToCheck, HashSet<SceneDef> failsafeSet, string groupIdentifier, out SceneDef[] choices) {
+
+            choices = Array.Empty<SceneDef>();
+
+            if (Run.instance.nextStageScene.destinations.Contains(SceneCatalog.GetSceneDefFromSceneName(groupIdentifier))) {
+
+                if (setToCheck.Any())
+                {
+                    choices = setToCheck.ToArray();
+                    return true;
+
+                }
+
+
+            }
+
+            else {
+
+                choices = Array.Empty<SceneDef>();
+                return false;
+
+            }
+
+            return false;
+
+        }
+
+        Dictionary<string, HashSet<SceneDef>> SceneMaps = new Dictionary<string, HashSet<SceneDef>>();
+
         private void PickValidScene(On.RoR2.Run.orig_PickNextStageScene orig, Run self, SceneDef[] choices)
         {
+
+            SceneMaps.Add("blackbeach", Stage1Set);
+            SceneMaps.Add("goolake", Stage2Set);
+            SceneMaps.Add("frozenwall", Stage3Set);
+            SceneMaps.Add("skymeadow", Stage5Set);
 
             if (StagesToRemove.Contains(Run.instance.nextStageScene))
             {
@@ -303,159 +295,32 @@ namespace StageRemover
 
                 }
 
-                if (Run.instance.nextStageScene.destinations.Contains(SceneCatalog.GetSceneDefFromSceneName("blackbeach")))
-                {
+                foreach (var stagekey in SceneMaps.Keys) {
 
-                    if (!Stage1Set.Any())
-                    {
-                        if (!FailsafeSet.Any())
-                        {
+                    if (Check(SceneMaps[stagekey], FailsafeSet, stagekey, out choices)) {
 
-                            Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
-                            choices = Run.instance.nextStageScene.destinations;
-
-                        }
-
-                        else
-                        {
-
-                            choices = FailsafeSet.ToArray();
-
-                        }
-
+                        break;
+                    
                     }
-
-                    else
-                    {
-
-                        choices = Stage1Set.ToArray();
-
-                    }
-
+                
                 }
 
-                else if (Run.instance.nextStageScene.destinations.Contains(SceneCatalog.GetSceneDefFromSceneName("goolake")))
-                {
+                if (!choices.Any()) {
 
-                    if (!Stage2Set.Any())
+                    if (!FailsafeSet.Any())
                     {
-                        if (!FailsafeSet.Any())
-                        {
 
-                            Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
-                            choices = Run.instance.nextStageScene.destinations;
-
-                        }
-
-                        else
-                        {
-
-                            choices = FailsafeSet.ToArray();
-
-                        }
+                        Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
+                        choices = Run.instance.nextStageScene.destinations;
 
                     }
 
-                    else
-                    {
+                    else {
 
-                        choices = Stage2Set.ToArray();
-
+                        choices = FailsafeSet.ToArray();
+                    
                     }
-
-                }
-
-                else if (Run.instance.nextStageScene.destinations.Contains(SceneCatalog.GetSceneDefFromSceneName("frozenwall")))
-                {
-
-                    if (!Stage3Set.Any())
-                    {
-                        if (!FailsafeSet.Any())
-                        {
-
-                            Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
-                            choices = Run.instance.nextStageScene.destinations;
-
-                        }
-
-                        else
-                        {
-
-                            choices = FailsafeSet.ToArray();
-
-                        }
-
-                    }
-
-                    else
-                    {
-
-                        choices = Stage3Set.ToArray();
-
-                    }
-
-                }
-
-                else if (Run.instance.nextStageScene.destinations.Contains(SceneCatalog.GetSceneDefFromSceneName("rootjungle")))
-                {
-
-                    if (!Stage4Set.Any())
-                    {
-                        if (!FailsafeSet.Any())
-                        {
-
-                            Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
-                            choices = Run.instance.nextStageScene.destinations;
-
-                        }
-
-                        else
-                        {
-
-                            choices = FailsafeSet.ToArray();
-
-                        }
-
-                    }
-
-                    else
-                    {
-
-                        choices = Stage4Set.ToArray();
-
-                    }
-
-                }
-
-                else if (Run.instance.nextStageScene.destinations.Contains(SceneCatalog.GetSceneDefFromSceneName("skymeadow")))
-                {
-
-                    if (!Stage5Set.Any())
-                    {
-                        if (!FailsafeSet.Any())
-                        {
-
-                            Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
-                            choices = Run.instance.nextStageScene.destinations;
-
-                        }
-
-                        else
-                        {
-
-                            choices = FailsafeSet.ToArray();
-
-                        }
-
-                    }
-
-                    else
-                    {
-
-                        choices = Stage5Set.ToArray();
-
-                    }
-
+                
                 }
 
                 Run.instance.PickNextStageScene(choices);
