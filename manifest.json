@@ -1,6 +1,6 @@
 {
     "name": "Stage_Remover",
-    "version_number": "2.0.0",
+    "version_number": "2.0.1",
     "website_url": "https://github.com/derslayr10/StageRemover",
     "description": "A mod that removes certain stages from the destination pool in RoR2. Currently only works for Sundered Grove.",
     "dependencies": [

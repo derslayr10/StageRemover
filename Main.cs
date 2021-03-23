@@ -250,12 +250,12 @@ namespace StageRemover
             StageCategories.Add(Stage4Set);
             StageCategories.Add(Stage5Set);
 
+            CompareList.Add("blackbeach");
             CompareList.Add("goolake");
             CompareList.Add("frozenwall");
             CompareList.Add("rootjungle");
             CompareList.Add("skymeadow");
-            CompareList.Add("blackbeach");
-
+            
         }
 
         public void Awake()
@@ -279,6 +279,13 @@ namespace StageRemover
 
                 orig(self);
 
+            };
+
+            On.RoR2.Stage.Start += (orig, self) => {
+
+                CurrentScene = SceneCatalog.GetSceneDefForCurrentScene();
+                orig(self);
+            
             };
 
             On.RoR2.Run.PickNextStageScene += PickValidScene;
@@ -316,54 +323,60 @@ namespace StageRemover
         private void PickValidScene(On.RoR2.Run.orig_PickNextStageScene orig, Run self, SceneDef[] choices)
         {
 
-            CurrentScene = Run.instance.nextStageScene;
-
-            if (StagesToRemove.Contains(CurrentScene))
-            {
+            if (Run.instance.stageClearCount > 0) {
 
                 foreach (SceneDef scene in CurrentScene.destinations)
                 {
 
-                    FailsafeSet.Add(scene);
-
-                }
-
-                RemoveScenes(FailsafeSet, StagesToRemove);
-
-                for (int i = 0; i < StageCategories.Count; i++)
-                {
-
-                    Logger.LogError(CurrentScene.baseSceneName);
-                    Logger.LogError(Check(StageCategories[i], CompareList[i], out choices, CurrentScene));
-
-                    if (Check(StageCategories[i], CompareList[i], out choices, CurrentScene))
+                    if (StagesToRemove.Contains(scene))
                     {
 
-                        break;
+                        foreach (SceneDef destinations in scene.destinations)
+                        {
+
+                            FailsafeSet.Add(destinations);
+
+                        }
+
+                        RemoveScenes(FailsafeSet, StagesToRemove);
+
+                        for (int i = 0; i < StageCategories.Count; i++)
+                        {
+
+                            if (Check(StageCategories[i], CompareList[i], out choices, CurrentScene))
+                            {
+
+                                break;
+
+                            }
+
+                        }
+
+                        if (!choices.Any())
+                        {
+
+                            if (!FailsafeSet.Any())
+                            {
+
+                                Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
+                                choices = CurrentScene.destinations;
+
+                            }
+
+                            else
+                            {
+
+                                choices = FailsafeSet.ToArray();
+
+                            }
+
+                        }
+
+                        FailsafeSet.Clear();
 
                     }
 
                 }
-
-                if (!choices.Any()) {
-
-                    if (!FailsafeSet.Any())
-                    {
-
-                        Logger.LogError("ERROR: NO VALID SCENE, USING DEFAULT DESTINATIONS");
-                        choices = CurrentScene.destinations;
-
-                    }
-
-                    else {
-
-                        choices = FailsafeSet.ToArray();
-                    
-                    }
-                
-                }
-
-                FailsafeSet.Clear();
 
             }
 
