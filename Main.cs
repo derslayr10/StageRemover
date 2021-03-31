@@ -1,28 +1,13 @@
 ﻿using BepInEx;
-using R2API;
-using R2API.Utils;
 using System.Collections.Generic;
-using System.Reflection;
-using UnityEngine;
 using RoR2;
 using System;
 using System.Linq;
 
 namespace StageRemover
 {
-    //this line adds the R2API dependency
-    [BepInDependency(R2API.R2API.PluginGUID, R2API.R2API.PluginVersion)]
-
-    /*add other mod dependencies here using above format*/
-
-    //this line determines whether the mod is client side or server side (default)
-    [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.EveryoneNeedSameModVersion)]
-
     //this line defines your mod name to BepIn, set later
     [BepInPlugin(ModGuid, ModName, ModVer)]
-
-    //this line adds in the R2API dependencies required
-    [R2APISubmoduleDependency(nameof(ResourcesAPI), nameof(ItemAPI), nameof(LanguageAPI), nameof(PrefabAPI))]
 
     //defines the mod
     public class Main : BaseUnityPlugin
@@ -33,7 +18,7 @@ namespace StageRemover
         //enter the mod name inside quotes. Ex: TwistedLoopMod
         public const string ModName = "Stage Remover";
         //enter the mod version inside quotes. Ex: 1.0.0
-        public const string ModVer = "2.0.0";
+        public const string ModVer = "2.0.1";
 
         //Define configs
         public static bool EnableRoost { get; set; }
