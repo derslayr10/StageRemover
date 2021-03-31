@@ -30,8 +30,11 @@ Stage Remover interrupts the normal process of the game deciding which stage you
 	 - No longer removes map from destination pool to avoid conflicts. Mod now simply forces the game to choose a new location if the initially chosen destination if disabled in config.
 	 - Hopefully supports modded maps, though you will need to know the SceneName for the map to use this feature.
 
- - V2.0.2
+ - v2.0.2
 	 - Updated for Post-Anniversary Update
+	 
+ - v2.0.3
+	 - Fixed MMHook Dependency
 	 
 ## Future Plans
 
